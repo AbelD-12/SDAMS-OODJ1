@@ -24,15 +24,9 @@ public abstract class BaseDashboard extends JFrame {
         User currentUser = Session.getCurrentUser();
 
         if (currentUser == null) {
-            JOptionPane.showMessageDialog(
-                    null,
-                    "No user is currently logged in.",
-                    "Session Error",
-                    JOptionPane.ERROR_MESSAGE
+            throw new IllegalStateException(
+                    "No user is currently logged in."
             );
-
-            dispose();
-            return;
         }
 
         setTitle("SDAMS - " + currentUser.getRole());
@@ -60,100 +54,57 @@ public abstract class BaseDashboard extends JFrame {
         createContentArea();
     }
 
-
-
     private void createHeader() {
 
         JPanel header = new JPanel(new BorderLayout());
 
         header.setBorder(
-                BorderFactory.createEmptyBorder(
-                        10, 20, 10, 20
-                )
+                BorderFactory.createEmptyBorder(10, 20, 10, 20)
         );
 
         User user = Session.getCurrentUser();
 
-        JLabel title =
-                UITheme.createTitle("SDAMS");
+        JLabel title = UITheme.createTitle("SDAMS");
 
-        lblUser = new JLabel(
-                "User: " + user.getName()
-        );
+        lblUser = new JLabel("User: " + user.getName());
+        lblUser.setFont(UITheme.NORMAL_FONT);
 
-        lblUser.setFont(
-                UITheme.NORMAL_FONT
-        );
+        lblRole = new JLabel("Role: " + user.getRole());
+        lblRole.setFont(UITheme.NORMAL_FONT);
 
-        lblRole = new JLabel(
-                "Role: " + user.getRole()
-        );
-
-        lblRole.setFont(
-                UITheme.NORMAL_FONT
-        );
-
-        JPanel userInfo =
-                new JPanel(new GridLayout(2, 1));
-
+        JPanel userInfo = new JPanel(new GridLayout(2, 1));
         userInfo.add(lblUser);
         userInfo.add(lblRole);
 
-        header.add(
-                title,
-                BorderLayout.WEST
-        );
+        header.add(title, BorderLayout.WEST);
+        header.add(userInfo, BorderLayout.EAST);
 
-        header.add(
-                userInfo,
-                BorderLayout.EAST
-        );
-
-        add(
-                header,
-                BorderLayout.NORTH
-        );
+        add(header, BorderLayout.NORTH);
     }
 
     private void createSidebar() {
 
         sidebar = new JPanel();
 
-        sidebar.setLayout(
-                new BoxLayout(
-                        sidebar,
-                        BoxLayout.Y_AXIS
-                )
-        );
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
 
         sidebar.setBorder(
-                BorderFactory.createEmptyBorder(
-                        15, 10, 15, 10
-                )
+                BorderFactory.createEmptyBorder(15, 10, 15, 10)
         );
 
-        sidebar.setPreferredSize(
-                new Dimension(220, 0)
-        );
+        sidebar.setPreferredSize(new Dimension(220, 0));
 
         btnLogout = new JButton("Logout");
 
         UITheme.styleButton(btnLogout);
 
-        btnLogout.setAlignmentX(
-                Component.CENTER_ALIGNMENT
-        );
+        btnLogout.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnLogout.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
 
-        btnLogout.addActionListener(
-                e -> logout()
-        );
+        btnLogout.addActionListener(e -> logout());
 
-        add(
-                sidebar,
-                BorderLayout.WEST
-        );
+        add(sidebar, BorderLayout.WEST);
     }
-
 
     private void createContentArea() {
 
@@ -162,53 +113,28 @@ public abstract class BaseDashboard extends JFrame {
         contentPanel = new JPanel(cardLayout);
 
         contentPanel.setBorder(
-                BorderFactory.createEmptyBorder(
-                        15, 15, 15, 15
-                )
+                BorderFactory.createEmptyBorder(15, 15, 15, 15)
         );
 
-        add(
-                contentPanel,
-                BorderLayout.CENTER
-        );
+        add(contentPanel, BorderLayout.CENTER);
     }
 
-    protected void addMenuItem(
-            String label,
-            JPanel panel
-    ) {
+    protected void addMenuItem(String label, JPanel panel) {
 
         JButton button = new JButton(label);
 
         UITheme.styleButton(button);
 
-        button.setAlignmentX(
-                Component.CENTER_ALIGNMENT
-        );
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
 
-        button.setMaximumSize(
-                new Dimension(
-                        Integer.MAX_VALUE,
-                        45
-                )
-        );
-
-        button.addActionListener(
-                e -> showPanel(label)
-        );
+        button.addActionListener(e -> showPanel(label));
 
         sidebar.add(button);
+        sidebar.add(Box.createVerticalStrut(10));
 
-        sidebar.add(
-                Box.createVerticalStrut(10)
-        );
-
-        contentPanel.add(
-                panel,
-                label
-        );
+        contentPanel.add(panel, label);
     }
-
 
     protected void addLogoutButton() {
 
@@ -218,10 +144,7 @@ public abstract class BaseDashboard extends JFrame {
 
     protected void showPanel(String panelName) {
 
-        cardLayout.show(
-                contentPanel,
-                panelName
-        );
+        cardLayout.show(contentPanel, panelName);
     }
 
     private void logout() {
@@ -239,8 +162,7 @@ public abstract class BaseDashboard extends JFrame {
 
             dispose();
 
-            // LoginFrame will be created later.
-            // We will connect it here in the next step.
+            new LoginFrame().setVisible(true);
         }
     }
 }
