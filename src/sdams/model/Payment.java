@@ -1,6 +1,5 @@
 package sdams.model;
 
-import sdams.enums.PaymentMethod;
 import sdams.enums.PaymentStatus;
 import sdams.util.Storable;
 
@@ -10,12 +9,12 @@ public class Payment implements Storable {
     private String studentId;
     private String bookingId;
     private double amount;
-    private PaymentMethod method;
+    private String method;   // CASH, CARD, ONLINE ... kept as text
     private PaymentStatus status;
-    private String date;   // written as yyyy-MM-dd, e.g. 2026-01-15
+    private String date;     // written as yyyy-MM-dd, e.g. 2026-01-15
 
     public Payment(String id, String studentId, String bookingId,
-                   double amount, PaymentMethod method,
+                   double amount, String method,
                    PaymentStatus status, String date) {
 
         this.id = id;
@@ -44,7 +43,7 @@ public class Payment implements Storable {
         return amount;
     }
 
-    public PaymentMethod getMethod() {
+    public String getMethod() {
         return method;
     }
 
@@ -77,13 +76,13 @@ public class Payment implements Storable {
             );
         }
 
-        String id = parts[0];
-        String studentId = parts[1];
-        String bookingId = parts[2];
-        double amount = Double.parseDouble(parts[3]);
-        PaymentMethod method = PaymentMethod.valueOf(parts[4]);
-        PaymentStatus status = PaymentStatus.valueOf(parts[5]);
-        String date = parts[6];
+        String id = parts[0].trim();
+        String studentId = parts[1].trim();
+        String bookingId = parts[2].trim();
+        double amount = Double.parseDouble(parts[3].trim());
+        String method = parts[4].trim();
+        PaymentStatus status = PaymentStatus.valueOf(parts[5].trim());
+        String date = parts[6].trim();
 
         return new Payment(id, studentId, bookingId,
                 amount, method, status, date);
