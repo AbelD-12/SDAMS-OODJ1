@@ -1,9 +1,10 @@
 package sdams.service;
 
+import sdams.enums.PaymentStatus;
 import sdams.enums.Role;
+import sdams.model.Payment;
 import sdams.model.RevenueRecord;
 import sdams.model.User;
-import sdams.util.FileHandler;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,15 +14,8 @@ import java.util.Map;
 
 public class ReportService {
 
-    private static final String PAYMENTS_FILE = "data/payments.txt";
-
-    // Position of each value in one line of payments.txt
-    // paymentId|studentId|bookingId|amount|method|status|date
-    private static final int COL_AMOUNT = 3;
-    private static final int COL_STATUS = 5;
-    private static final int COL_DATE = 6;
-
     private UserService userService = new UserService();
+    private PaymentService paymentService = new PaymentService();
 
     private String[] monthNames = {
             "January", "February", "March", "April", "May", "June",
@@ -34,7 +28,7 @@ public class ReportService {
     public List<RevenueRecord> getMonthlyRevenue(int year) {
 
         List<RevenueRecord> records = new ArrayList<>();
-        List<String[]> paid = readPaidPayments();
+        List<Payment> paid = getPaidPayments();
 
         for (int month = 1; month <= 12; month++) {
 
@@ -43,11 +37,11 @@ public class ReportService {
             int registrations = 0;
             double total = 0;
 
-            for (String[] payment : paid) {
+            for (Payment payment : paid) {
 
-                if (payment[COL_DATE].trim().startsWith(prefix)) {
+                if (dateOf(payment).startsWith(prefix)) {
                     registrations++;
-                    total += Double.parseDouble(payment[COL_AMOUNT].trim());
+                    total += amountOf(payment);
                 }
             }
 
@@ -63,14 +57,14 @@ public class ReportService {
     public List<RevenueRecord> getYearlyRevenue() {
 
         List<RevenueRecord> records = new ArrayList<>();
-        List<String[]> paid = readPaidPayments();
+        List<Payment> paid = getPaidPayments();
 
-        // find every year in the file
+        // find every year that has a payment
         List<String> years = new ArrayList<>();
 
-        for (String[] payment : paid) {
+        for (Payment payment : paid) {
 
-            String year = payment[COL_DATE].trim().substring(0, 4);
+            String year = dateOf(payment).substring(0, 4);
 
             if (!years.contains(year)) {
                 years.add(year);
@@ -84,11 +78,11 @@ public class ReportService {
             int registrations = 0;
             double total = 0;
 
-            for (String[] payment : paid) {
+            for (Payment payment : paid) {
 
-                if (payment[COL_DATE].trim().startsWith(year)) {
+                if (dateOf(payment).startsWith(year)) {
                     registrations++;
-                    total += Double.parseDouble(payment[COL_AMOUNT].trim());
+                    total += amountOf(payment);
                 }
             }
 
@@ -151,39 +145,41 @@ public class ReportService {
 
     // ------------------------------------------------------- Helpers
 
+    // Only PAID payments count. PENDING and REFUNDED are left out.
+    private List<Payment> getPaidPayments() {
+
+        List<Payment> paid = new ArrayList<>();
+
+        for (Payment payment : paymentService.getAll()) {
+
+            if (payment.getStatus() == PaymentStatus.PAID) {
+                paid.add(payment);
+            }
+        }
+
+        return paid;
+    }
+
+    // ---- If Member 4's Payment class uses other getter names,
+    // ---- these two methods are the ONLY lines you need to change.
+
+    // the payment amount, e.g. 150.0
+    private double amountOf(Payment payment) {
+        return payment.getAmount();
+    }
+
+    // the payment date as text, like "2026-01-15"
+    // (toString() works for both a String and a LocalDate)
+    private String dateOf(Payment payment) {
+        return payment.getDate().toString();
+    }
+
     private boolean isStaff(Role role) {
 
         return role == Role.ADMINISTRATOR
                 || role == Role.INSTRUCTOR
                 || role == Role.FACILITIES_OFFICER
                 || role == Role.ATTENDANCE_OFFICER;
-    }
-
-    // Every PAID line of payments.txt, split into its values.
-    // PENDING and REFUNDED lines are left out.
-    private List<String[]> readPaidPayments() {
-
-        List<String[]> paid = new ArrayList<>();
-
-        for (String line : FileHandler.readLines(PAYMENTS_FILE)) {
-
-            if (line.trim().isEmpty()) {
-                continue;
-            }
-
-            String[] parts = line.split("\\|");
-
-            // ignore lines that do not have the 7 values
-            if (parts.length != 7) {
-                continue;
-            }
-
-            if (parts[COL_STATUS].trim().equals("PAID")) {
-                paid.add(parts);
-            }
-        }
-
-        return paid;
     }
 
     // 5 -> "05", 11 -> "11"
