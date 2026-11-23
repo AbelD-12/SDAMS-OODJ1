@@ -1,7 +1,7 @@
 package sdams.model;
 
 import sdams.enums.Role;
-import sdams.ui.manager.ManagerDashboard;
+import javax.swing.JOptionPane;
 
 public class Manager extends User {
 
@@ -19,7 +19,9 @@ public class Manager extends User {
     @Override
     public void showDashboard() {
 
-        ManagerDashboard dashboard = new ManagerDashboard();
-        dashboard.setVisible(true);
+        JOptionPane.showMessageDialog(
+                null,
+                "Manager Dashboard"
+        );
     }
 }
