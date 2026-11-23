@@ -129,11 +129,11 @@ public class RevenueReportPanel extends JPanel {
                 showTable(reportService.getYearlyRevenue());
             }
 
-        } catch (NumberFormatException e) {
+        } catch (IllegalArgumentException e) {
 
             JOptionPane.showMessageDialog(
                     this,
-                    "payments.txt contains an invalid amount.",
+                    "payments.txt has a wrong line:\n" + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
