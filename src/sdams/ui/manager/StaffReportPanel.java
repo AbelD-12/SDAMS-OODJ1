@@ -2,18 +2,20 @@ package sdams.ui.manager;
 
 import sdams.enums.Role;
 import sdams.model.User;
-import sdams.service.UserService;
+import sdams.service.ReportService;
 import sdams.ui.common.UITheme;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
+import java.util.List;
+import java.util.Map;
 
 public class StaffReportPanel extends JPanel {
 
-    private UserService userService = new UserService();
+    private ReportService reportService = new ReportService();
 
-    // The 4 staff roles and their display names (same order in both arrays)
-    private Role[] staffRoles = {
+    // Same order in both arrays. Index 0 = all staff (no role filter)
+    private Role[] roles = {
+            null,
             Role.ADMINISTRATOR,
             Role.INSTRUCTOR,
             Role.FACILITIES_OFFICER,
@@ -21,11 +23,14 @@ public class StaffReportPanel extends JPanel {
     };
 
     private String[] roleNames = {
+            "All Staff",
             "Administrator",
             "Instructor",
             "Facilities Officer",
             "Attendance Officer"
     };
+
+    private String[] columns = {"ID", "Name", "Role", "Username", "Email", "Phone"};
 
     private JLabel lblTitle;
 
@@ -37,7 +42,6 @@ public class StaffReportPanel extends JPanel {
     private JButton btnReset;
 
     private JTable table;
-    private DefaultTableModel tableModel;
     private JScrollPane scrollPane;
 
     private JLabel lblAdmins;
@@ -57,17 +61,11 @@ public class StaffReportPanel extends JPanel {
 
         // ----- filter row
         lblRole = new JLabel("Role:");
-        cboRole = new JComboBox<>();
+        cboRole = new JComboBox<>(roleNames);
         lblName = new JLabel("Name:");
         txtName = new JTextField(10);
         btnFilter = new JButton("Filter");
         btnReset = new JButton("Reset");
-
-        // first item = everyone, then the 4 roles
-        cboRole.addItem("All Staff");
-        for (int i = 0; i < roleNames.length; i++) {
-            cboRole.addItem(roleNames[i]);
-        }
 
         lblRole.setBounds(10, 55, 50, 25);
         cboRole.setBounds(60, 55, 170, 25);
@@ -80,11 +78,7 @@ public class StaffReportPanel extends JPanel {
         UITheme.styleButton(btnReset);
 
         // ----- table
-        String[] columns = {"ID", "Name", "Role", "Username", "Email", "Phone"};
-
-        tableModel = new DefaultTableModel(columns, 0);
-        table = new JTable(tableModel);
-        table.setDefaultEditor(Object.class, null);   // cells cannot be typed in
+        table = new JTable(new Object[0][6], columns);
         UITheme.styleTable(table);
 
         scrollPane = new JScrollPane(table);
@@ -131,7 +125,6 @@ public class StaffReportPanel extends JPanel {
         // ----- actions (lambda expressions)
         btnFilter.addActionListener(e -> showReport());
         txtName.addActionListener(e -> showReport());
-        cboRole.addActionListener(e -> showReport());
 
         btnReset.addActionListener(e -> {
             txtName.setText("");
@@ -142,65 +135,60 @@ public class StaffReportPanel extends JPanel {
         showReport();
     }
 
-    // Finds the position of a role in staffRoles (-1 if it is not staff)
-    private int findRoleIndex(Role role) {
-
-        for (int i = 0; i < staffRoles.length; i++) {
-            if (staffRoles[i] == role) {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
     private void showReport() {
 
-        int roleChoice = cboRole.getSelectedIndex();   // 0 = All Staff
-        String nameText = txtName.getText().trim().toLowerCase();
+        // role = null when "All Staff" is chosen
+        Role role = roles[cboRole.getSelectedIndex()];
+        String name = txtName.getText().trim();
 
-        int[] counts = new int[4];   // total of each role
-        int shown = 0;
+        // ----- table: staff filtered by role and name
+        List<User> staff = reportService.searchStaff(role, name);
 
-        tableModel.setRowCount(0);
+        Object[][] data = new Object[staff.size()][6];
 
-        for (User user : userService.getAll()) {
+        for (int i = 0; i < staff.size(); i++) {
 
-            int i = findRoleIndex(user.getRole());
+            User user = staff.get(i);
 
-            // Managers and students are not staff, so skip them
-            if (i == -1) {
-                continue;
-            }
+            data[i][0] = user.getId();
+            data[i][1] = user.getName();
+            data[i][2] = roleName(user.getRole());
+            data[i][3] = user.getUsername();
+            data[i][4] = user.getEmail();
+            data[i][5] = user.getPhone();
+        }
 
-            counts[i]++;
+        table = new JTable(data, columns);
+        UITheme.styleTable(table);
+        scrollPane.setViewportView(table);
 
-            boolean roleMatches = (roleChoice == 0) || (roleChoice == i + 1);
-            boolean nameMatches = user.getName().toLowerCase().contains(nameText);
+        // ----- totals: all staff, not affected by the filter
+        Map<Role, Integer> counts = reportService.countStaffByRole();
 
-            if (roleMatches && nameMatches) {
+        int admins = counts.get(Role.ADMINISTRATOR);
+        int instructors = counts.get(Role.INSTRUCTOR);
+        int facilities = counts.get(Role.FACILITIES_OFFICER);
+        int attendance = counts.get(Role.ATTENDANCE_OFFICER);
 
-                Object[] row = {
-                        user.getId(),
-                        user.getName(),
-                        roleNames[i],
-                        user.getUsername(),
-                        user.getEmail(),
-                        user.getPhone()
-                };
+        int total = admins + instructors + facilities + attendance;
 
-                tableModel.addRow(row);
-                shown++;
+        lblAdmins.setText("Administrators: " + admins);
+        lblInstructors.setText("Instructors: " + instructors);
+        lblFacilities.setText("Facilities Officers: " + facilities);
+        lblAttendance.setText("Attendance Officers: " + attendance);
+        lblTotal.setText("Total staff: " + total);
+        lblShowing.setText("Showing " + staff.size() + " record(s) in the table");
+    }
+
+    // Turns Role.FACILITIES_OFFICER into "Facilities Officer"
+    private String roleName(Role role) {
+
+        for (int i = 1; i < roles.length; i++) {
+            if (roles[i] == role) {
+                return roleNames[i];
             }
         }
 
-        int total = counts[0] + counts[1] + counts[2] + counts[3];
-
-        lblAdmins.setText("Administrators: " + counts[0]);
-        lblInstructors.setText("Instructors: " + counts[1]);
-        lblFacilities.setText("Facilities Officers: " + counts[2]);
-        lblAttendance.setText("Attendance Officers: " + counts[3]);
-        lblTotal.setText("Total staff: " + total);
-        lblShowing.setText("Showing " + shown + " record(s) in the table");
+        return "";
     }
 }
