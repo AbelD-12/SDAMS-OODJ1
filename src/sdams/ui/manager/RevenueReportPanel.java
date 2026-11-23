@@ -5,7 +5,6 @@ import sdams.service.ReportService;
 import sdams.ui.common.UITheme;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,10 +12,13 @@ public class RevenueReportPanel extends JPanel {
 
     private ReportService reportService = new ReportService();
 
-    private String[] monthNames = {
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
+    private String[] months = {
+            "All Months", "January", "February", "March", "April", "May",
+            "June", "July", "August", "September", "October",
+            "November", "December"
     };
+
+    private String[] columns = {"Period", "Registrations", "Total Revenue"};
 
     private JLabel lblTitle;
 
@@ -29,7 +31,6 @@ public class RevenueReportPanel extends JPanel {
     private JButton btnView;
 
     private JTable table;
-    private DefaultTableModel tableModel;
     private JScrollPane scrollPane;
 
     private JLabel lblRegistrations;
@@ -58,12 +59,7 @@ public class RevenueReportPanel extends JPanel {
         lblYear = new JLabel("Year:");
         cboYear = new JComboBox<>();
         lblMonth = new JLabel("Month:");
-        cboMonth = new JComboBox<>();
-
-        cboMonth.addItem("All Months");
-        for (int i = 0; i < monthNames.length; i++) {
-            cboMonth.addItem(monthNames[i]);
-        }
+        cboMonth = new JComboBox<>(months);
 
         lblYear.setBounds(210, 55, 40, 25);
         cboYear.setBounds(250, 55, 90, 25);
@@ -76,11 +72,7 @@ public class RevenueReportPanel extends JPanel {
         UITheme.styleButton(btnView);
 
         // ----- table
-        String[] columns = {"Period", "Registrations", "Total Revenue"};
-
-        tableModel = new DefaultTableModel(columns, 0);
-        table = new JTable(tableModel);
-        table.setDefaultEditor(Object.class, null);   // cells cannot be typed in
+        table = new JTable(new Object[0][3], columns);
         UITheme.styleTable(table);
 
         scrollPane = new JScrollPane(table);
@@ -109,25 +101,14 @@ public class RevenueReportPanel extends JPanel {
         add(lblRegistrations);
         add(lblGrandTotal);
 
-        // ----- actions (lambda expressions)
-        btnView.addActionListener(e -> generateReport());
-
-        // a yearly report shows every year, so year and month are not needed
-        rdoMonthly.addActionListener(e -> {
-            cboYear.setEnabled(true);
-            cboMonth.setEnabled(true);
-        });
-
-        rdoYearly.addActionListener(e -> {
-            cboYear.setEnabled(false);
-            cboMonth.setEnabled(false);
-        });
+        // ----- action (lambda expression)
+        btnView.addActionListener(e -> viewReport());
 
         loadYears();
-        generateReport();
+        viewReport();
     }
 
-    // Fills the year box with every year that has PAID payments
+    // Puts every year that has PAID payments into the year box
     private void loadYears() {
 
         List<RevenueRecord> years = reportService.getYearlyRevenue();
@@ -138,7 +119,7 @@ public class RevenueReportPanel extends JPanel {
         }
     }
 
-    private void generateReport() {
+    private void viewReport() {
 
         try {
 
@@ -161,20 +142,22 @@ public class RevenueReportPanel extends JPanel {
 
         String year = (String) cboYear.getSelectedItem();
 
-        List<RevenueRecord> records = new ArrayList<>();
+        // no payments in the file at all
+        if (year == null) {
+            showTable(new ArrayList<>());
+            return;
+        }
 
-        if (year != null) {
+        List<RevenueRecord> records =
+                reportService.getMonthlyRevenue(Integer.parseInt(year));
 
-            List<RevenueRecord> allMonths =
-                    reportService.getMonthlyRevenue(Integer.parseInt(year));
+        int choice = cboMonth.getSelectedIndex();   // 0 = All Months
 
-            int choice = cboMonth.getSelectedIndex();   // 0 = All Months
-
-            if (choice == 0) {
-                records = allMonths;
-            } else {
-                records.add(allMonths.get(choice - 1));
-            }
+        // one month chosen: keep only that month
+        if (choice != 0) {
+            RevenueRecord one = records.get(choice - 1);
+            records = new ArrayList<>();
+            records.add(one);
         }
 
         showTable(records);
@@ -183,31 +166,29 @@ public class RevenueReportPanel extends JPanel {
     // Shows the records in the table and the grand total under it
     private void showTable(List<RevenueRecord> records) {
 
-        tableModel.setRowCount(0);
+        Object[][] data = new Object[records.size()][3];
 
         int totalRegistrations = 0;
         double grandTotal = 0;
 
-        for (RevenueRecord record : records) {
+        for (int i = 0; i < records.size(); i++) {
 
-            Object[] row = {
-                    record.getPeriod(),
-                    record.getRegistrations(),
-                    "RM " + money(record.getTotalRevenue())
-            };
+            RevenueRecord record = records.get(i);
 
-            tableModel.addRow(row);
+            data[i][0] = record.getPeriod();
+            data[i][1] = record.getRegistrations();
+            data[i][2] = "RM " + String.format("%.2f", record.getTotalRevenue());
 
             totalRegistrations += record.getRegistrations();
             grandTotal += record.getTotalRevenue();
         }
 
-        lblRegistrations.setText("Total registrations: " + totalRegistrations);
-        lblGrandTotal.setText("Grand total revenue: RM " + money(grandTotal));
-    }
+        table = new JTable(data, columns);
+        UITheme.styleTable(table);
+        scrollPane.setViewportView(table);
 
-    // 2000 -> "2,000.00"
-    private String money(double amount) {
-        return String.format("%,.2f", amount);
+        lblRegistrations.setText("Total registrations: " + totalRegistrations);
+        lblGrandTotal.setText(
+                "Grand total revenue: RM " + String.format("%.2f", grandTotal));
     }
 }
