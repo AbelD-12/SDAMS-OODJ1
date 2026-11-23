@@ -12,6 +12,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Builds the Manager's reports: monthly and yearly revenue
+ * (from PaymentService) and the staff report (from UserService).
+ */
 public class ReportService {
 
     private UserService userService = new UserService();
@@ -24,7 +28,13 @@ public class ReportService {
 
     // ------------------------------------------------------ Revenue
 
-    // One record for each month of the given year
+    /**
+     * Revenue for every month of a year (always 12 records).
+     * Only PAID payments are counted.
+     *
+     * @param year the year, e.g. 2026
+     * @return one RevenueRecord for each month, January to December
+     */
     public List<RevenueRecord> getMonthlyRevenue(int year) {
 
         List<RevenueRecord> records = new ArrayList<>();
@@ -53,7 +63,23 @@ public class ReportService {
         return records;
     }
 
-    // One record for each year that has PAID payments (oldest first)
+    /**
+     * Revenue for one month only (overloaded version of the method above).
+     *
+     * @param year   the year, e.g. 2026
+     * @param month  the month, 1 (January) to 12 (December)
+     * @return the RevenueRecord of that month
+     */
+    public RevenueRecord getMonthlyRevenue(int year, int month) {
+
+        return getMonthlyRevenue(year).get(month - 1);
+    }
+
+    /**
+     * Revenue for every year that has PAID payments, oldest year first.
+     *
+     * @return one RevenueRecord for each year
+     */
     public List<RevenueRecord> getYearlyRevenue() {
 
         List<RevenueRecord> records = new ArrayList<>();
@@ -94,7 +120,12 @@ public class ReportService {
 
     // ---------------------------------------------------------- Staff
 
-    // Number of staff for each of the 4 staff roles
+    /**
+     * Counts the staff of each staff role.
+     * Managers and students are not staff, so they are not counted.
+     *
+     * @return a map from role to the number of users with that role
+     */
     public Map<Role, Integer> countStaffByRole() {
 
         Map<Role, Integer> counts = new HashMap<>();
@@ -114,7 +145,13 @@ public class ReportService {
         return counts;
     }
 
-    // Staff filtered by role (null = all roles) and by name
+    /**
+     * Staff filtered by role and by name.
+     *
+     * @param roleOrNull  the role to show, or null for all staff roles
+     * @param name        part of the name to look for ("" = any name)
+     * @return the staff that match both filters
+     */
     public List<User> searchStaff(Role roleOrNull, String name) {
 
         List<User> results = new ArrayList<>();
@@ -143,6 +180,17 @@ public class ReportService {
         return results;
     }
 
+    /**
+     * Staff filtered by role only (overloaded version of the method above).
+     *
+     * @param roleOrNull  the role to show, or null for all staff roles
+     * @return the staff with that role
+     */
+    public List<User> searchStaff(Role roleOrNull) {
+
+        return searchStaff(roleOrNull, "");
+    }
+
     // ------------------------------------------------------- Helpers
 
     // Only PAID payments count. PENDING and REFUNDED are left out.
@@ -160,16 +208,12 @@ public class ReportService {
         return paid;
     }
 
-    // ---- If Member 4's Payment class uses other getter names,
-    // ---- these two methods are the ONLY lines you need to change.
-
     // the payment amount, e.g. 150.0
     private double amountOf(Payment payment) {
         return payment.getAmount();
     }
 
     // the payment date as text, like "2026-01-15"
-    // (toString() works for both a String and a LocalDate)
     private String dateOf(Payment payment) {
         return payment.getDate().toString();
     }

@@ -2,6 +2,10 @@ package sdams.service;
 
 import sdams.model.Payment;
 
+/**
+ * Loads and saves payments from data/payments.txt.
+ * getAll(), getById(), add(), update() and delete() come from BaseService.
+ */
 public class PaymentService extends BaseService<Payment> {
 
     @Override
