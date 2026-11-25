@@ -1,5 +1,5 @@
 MGR001|MANAGER|John Manager|manager|password123|manager@example.com|0123456789
-ADM001|ADMINISTRATOR|Admin One|admin|password123|admin@example.com|0123456780
+ADM001|ADMINISTRATOR|Admin One and only and ze only|admin|password123|admin@example.com|0123456780
 INS001|INSTRUCTOR|Instructor One|instructor|password123|instructor@example.com|0123456781
 STU001|STUDENT|Student One|student|password123|student@example.com|0123456782
 FAC001|FACILITIES_OFFICER|Facilities One|facilities|password123|facilities@example.com|0123456783

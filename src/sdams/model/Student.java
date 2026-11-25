@@ -1,13 +1,12 @@
 package sdams.model;
 
 import sdams.enums.Role;
-import javax.swing.JOptionPane;
+import sdams.ui.student.StudentDashboard;
 
 public class Student extends User {
 
     public Student(String id, String name, String username,
                    String password, String email, String phone) {
-
         super(id, name, username, password, email, phone);
     }
 
@@ -18,10 +17,6 @@ public class Student extends User {
 
     @Override
     public void showDashboard() {
-
-        JOptionPane.showMessageDialog(
-                null,
-                "Student Dashboard"
-        );
+        new StudentDashboard().setVisible(true);
     }
 }
