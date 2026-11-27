@@ -1,7 +1,7 @@
 package sdams.model;
 
 import sdams.enums.Role;
-import javax.swing.JOptionPane;
+import sdams.ui.instructor.InstructorDashboard;
 
 public class Instructor extends User {
 
@@ -18,10 +18,6 @@ public class Instructor extends User {
 
     @Override
     public void showDashboard() {
-
-        JOptionPane.showMessageDialog(
-                null,
-                "Instructor Dashboard"
-        );
+        new InstructorDashboard(this).setVisible(true);
     }
 }
